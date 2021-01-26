@@ -477,3 +477,14 @@ DELIMITER ;
 CALL pInsertInterns();
 CALL pUpdateInterns(1, 13);
 CALL pDeleteInterns(2);
+					      
+-- Consultas 
+
+-- SELECT firstName, NAME, credits  FROM professors NATURAL JOIN teachingloads NATURAL JOIN groups;
+
+-- SELECT AVG(VALUE) FROM grades WHERE groupId = 2;
+
+-- SELECT studentId, MAX(VALUE) FROM grades GROUP BY studentId ORDER BY value DESC;
+
+-- SELECT firstName, surname, COUNT(professorId) numberOfGroups FROM professors NATURAL JOIN teachingloads GROUP BY professorId ORDER BY numberOfGroups DESC;   
+					      
