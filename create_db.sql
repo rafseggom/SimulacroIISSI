@@ -1,10 +1,3 @@
--- Creado por Daniel Ayala, David Ruiz, Agustin Borrego, e Inma Hernandez
--- Script de creacion de base de datos para examen de laboratorio de IISSI1
--- En este scripts se encuentran procedimientos para la creacion de tablas
--- (incluido el uso del procedimiento), la inserción de datos (incluido el
--- uso del procedimiento), y algunos procedimientos adicionales que pueden
--- usarse como referencia a 
-
 -- Definicion del procedimiento de creacion de tablas
 DELIMITER //
 CREATE OR REPLACE PROCEDURE
@@ -22,6 +15,7 @@ BEGIN
 	DROP TABLE IF EXISTS Classrooms;
 	DROP TABLE IF EXISTS Departments;
 	DROP TABLE IF EXISTS TutoringHours;
+	DROP TABLE if EXISTS Publicaciones;
 	DROP TABLE IF EXISTS TeachingLoads;
 	DROP TABLE IF EXISTS Appointments;
 	DROP TABLE IF EXISTS Professors;
@@ -38,6 +32,7 @@ BEGIN
 		UNIQUE (name)
 	);
 
+	
 	CREATE TABLE Classrooms (
 		classroomId INT NOT NULL AUTO_INCREMENT,
 		name VARCHAR(60) NOT NULL UNIQUE,
@@ -171,6 +166,19 @@ BEGIN
 														'PAD'))
 	);
 
+	CREATE TABLE Publicaciones(
+		publicacionId INT NOT NULL AUTO_INCREMENT,
+		title VARCHAR(100) NOT NULL,
+		professorId INT NOT NULL, 
+		totalAuthors INT NOT NULL,
+		publishDay DATE,
+		magazine VARCHAR (100) NOT NULL,
+		PRIMARY KEY (publicacionId),
+		UNIQUE (professorId, publishDay, magazine),
+		CONSTRAINT invalidAuthors CHECK (totalAuthors <= 10 && totalAuthors >= 1),
+		FOREIGN KEY (professorId) REFERENCES professors (professorId)
+		);
+		
 	CREATE TABLE TutoringHours(
 		tutoringHoursId INT NOT NULL AUTO_INCREMENT,
 		professorId INT NOT NULL,
@@ -456,11 +464,13 @@ DELIMITER ;
 
 -- Procedure 2 
 
+-- s --> old
+-- d --> new
 DELIMITER //
 CREATE OR REPLACE PROCEDURE 
 	pUpdateInterns(s INT,d INT)
 BEGIN
-	UPDATE InternalStudents	SET studentId = d WHERE studentId = d;
+	UPDATE InternalStudents	SET studentId = d WHERE studentId = s;
 
 END //
 DELIMITER ;
@@ -474,10 +484,11 @@ BEGIN
 END //
 DELIMITER ;
 
+-- LLamadas
 CALL pInsertInterns();
 CALL pUpdateInterns(1, 13);
 CALL pDeleteInterns(2);
-					      
+
 -- Consultas 
 
 -- SELECT firstName, NAME, credits  FROM professors NATURAL JOIN teachingloads NATURAL JOIN groups;
@@ -486,5 +497,63 @@ CALL pDeleteInterns(2);
 
 -- SELECT studentId, MAX(VALUE) FROM grades GROUP BY studentId ORDER BY value DESC;
 
--- SELECT firstName, surname, COUNT(professorId) numberOfGroups FROM professors NATURAL JOIN teachingloads GROUP BY professorId ORDER BY numberOfGroups DESC;   
-					      
+-- SELECT firstName, surname, COUNT(professorId) numberOfGroups FROM professors NATURAL JOIN teachingloads GROUP BY professorId ORDER BY numberOfGroups DESC;
+
+
+-- ------------------------
+		
+DELIMITER //
+CREATE OR REPLACE PROCEDURE 
+	pInsertPublications()
+BEGIN
+	INSERT INTO publicaciones (title, professorId, totalAuthors, publishDay, magazine) VALUES	("Publicación 1", 1, 3, NULL, "Revista 1");
+	INSERT INTO publicaciones (title, professorId, totalAuthors, publishDay, magazine) VALUES	("Publicación 2", 1, 5, "2018-01-01", "Revista 2");
+	INSERT INTO publicaciones (title, professorId, totalAuthors, publishDay, magazine) VALUES	("Publicación 3", 2, 2, NULL, "Revista 3");
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE OR REPLACE TRIGGER tCorrectAuthors
+	BEFORE INSERT ON publicaciones
+	FOR EACH ROW
+	BEGIN
+		IF (new.totalAuthors >10) THEN
+			SET new.totalAuthors = 10;
+		END IF;
+	END//
+DELIMITER ;
+
+DELIMITER //
+CREATE OR REPLACE PROCEDURE 
+	pUpdatePublications(p INT,n INT)
+BEGIN
+	UPDATE publicaciones	SET totalAuthors = n WHERE professorId = p;
+
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE OR REPLACE PROCEDURE 
+	pDeletePublications(p INT)
+BEGIN
+	DELETE FROM publicaciones WHERE professorId=p;
+END //
+DELIMITER ;
+
+
+-- LLamadas
+CALL pInsertPublications();
+CALL pUpdatePublications(1, 10);
+CALL pDeletePublications(2);
+
+-- Consultas
+
+-- SELECT  degrees.name, subjects.name, credits, type FROM subjects JOIN degrees ORDER BY degrees.name;
+
+-- SELECT tutoringHoursId FROM appointments NATURAL JOIN tutoringhours GROUP BY tutoringHoursId;
+
+-- SELECT AVG(credits) FROM teachingLoads WHERE professorId = 1;
+
+-- SELECT firstName, surname, AVG(grades.value), MIN(grades.value), MAX(grades.value) FROM grades NATURAL JOIN students GROUP BY studentId LIMIT 2;
